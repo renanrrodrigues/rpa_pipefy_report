@@ -1,0 +1,21 @@
+{
+    "config_name": "config name",
+    "token": "",
+
+    "reports": [
+        {
+            "active": true,
+            "pipe_id": 0,
+            "report_id": 0,
+            "backup_file": true,
+            "save_path": "C:\\FOLDER\\REPORT\\2022"},
+
+        {
+            "active": false,
+            "pipe_id": 0,
+            "report_id": 0,
+            "backup_file": true,
+            "save_path": "C:\\FOLDER\\REPORT\\2022"}
+    ]
+}
+
