@@ -14,16 +14,16 @@
         {   
             "pipe_name": "Avaliação de Desempenho",
             "active": true,
-            "pipe_id": 302841213,
-            "report_id": 300382453,
+            "pipe_id": 3028,
+            "report_id": 300453,
             "backup_file": true,
             "file_name": "RELATÓRIO AVALIAÇÃO 2022",
             "save_path": "C:\\RPA-PIPE\\REPORT\\AVALIAÇÃO"},
         {
             "pipe_name": "Gerenciamento de Produto",
             "active": false,
-            "pipe_id": 302841214,
-            "report_id": 300382454,
+            "pipe_id": 30000,
+            "report_id": 3044,
             "backup_file": true,
             "file_name": "RELATÓRIO PRODUTO 2020",
             "save_path": "C:\\RPA-PIPE\\REPORT\\PRODUTO"}
