@@ -6,6 +6,9 @@
 # version ='1.0'
 # ---------------------------------------------------------------------------
 """ rpa pipefy """
+import datetime
+from email import encoders
+from email.mime.base import MIMEBase
 # ---------------------------------------------------------------------------
 # Imports Line
 # ---------------------------------------------------------------------------
@@ -18,12 +21,10 @@ import requests
 from loguru import logger
 from termcolor import RESET
 from os import system, name
-from alive_progress import alive_bar
 import secrets
-from datetime import date, datetime
+import datetime
 from email.headerregistry import Address
 from email.message import EmailMessage
-from email.mime.base import MIMEBase
 import smtplib
 
 # -------Static variables--------------------------------------------------------------------
@@ -107,7 +108,20 @@ class OpenFile:
             data_file = json.load(f)
             return data_file
         except Exception:
-            logger.critical('Error: Não foi possível carregar o arquivo de configuração!\n\nArquivo de configuração está com erro de syntax ou inacessível!\n')
+            logger.critical('Error: Não foi possível carregar o arquivo de configuração!')
+            r_id = random.randint(0, 1000)
+            config_mail = config['config_alert_mail']
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
+            messege = f"""Número de relatórios com falhas: {len(list_failed)}
+            
+            Error: Não foi possível carregar o arquivo de configuração!
+            
+            {datetime.date.today()}
+            
+            ... rpa-pipefy v1.0 
+            """
+            
+            SendMail(config_mail, subject, messege).send_mail()
             quit()
 
 
@@ -155,11 +169,10 @@ class ExportPipeReportId:
         return exportPipeReport or false
     """
 
-    def __init__(self, pipe_id, pipe_report_id, token, report_item):
+    def __init__(self, pipe_id, pipe_report_id, token):
         self.id_pipe = pipe_id
         self.pipe_report_id = pipe_report_id
         self.token = token
-        self.report_item = report_item
 
     def export_pipe_report(self):
         """
@@ -186,27 +199,27 @@ class ExportPipeReportId:
                 else:
                     if 'errors' in response:  # se está vazio provavelmente deu erro
                         logger.warning(
-                            f"Warning: Esse relatório ({self.report_item['file_name']}:{self.pipe_report_id}) (PIPE:{self.report_item['pipe_name']}) falhou!\n{response['errors'][0]['message']}")
+                            f"Warning: Esse relatório ({self.pipe_report_id}) falhou!\n{response['errors'][0]['message']}")
                         return False
                     else:
-                        logger.error(f'Esse relatório ({self.report_item["file_name"]}:{self.pipe_report_id}) (PIPE:{self.report_item["pipe_name"]}) falhou!\nAlgo está errado com a requisição na API.')
+                        logger.error(f'Esse relatório falhou!\nAlgo está errado com a requisição na API.')
                         return False
             else:
-                logger.error(f'Esse relatório ({self.report_item["file_name"]}:{self.pipe_report_id}) (PIPE:{self.report_item["pipe_name"]}) falhou!\nAlgo está errado com a requisição na API.')
+                logger.error('Esse relatório falhou!\nAlgo está errado com a requisição na API.')
                 return False
         except Exception:
             logger.critical(f'Erro interno no método que gera id do relatório!!')
 
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             Erro interno no método que gera id do relatório!!
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -241,60 +254,18 @@ class PipeReportExportLink:
             
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             Erro interno na função que filtra o retorno da requisição "pipeReportExport"!
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
             quit()
-    
-    
-    def check_report_state(self):
-        """
-        check state report.
-        """
-        payload = {
-            "query": "{\n  pipeReportExport(id: "f'{int(self.id_pipe_report_export)}'") {\n    fileURL\n    state\n    startedAt\n    requestedBy {\n      id\n    }\n  }\n  pipe(id:"f'{int(self.pipe_id)}'"){\n   reports{\n    id\n    name\n  }\n  }\n}",
-            "variables": None
-        }
-
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "authorization": "Bearer "f'{self.token}'""
-        }
-        
-        try:
-            response = RequestApi(URL_API, payload, headers).return_requests()
-            response = response.json()
-            
-            status = response['data']['pipeReportExport']['state']
-            return status
-            
-        except Exception:
-            logger.critical(f'Erro interno no método que checa o status relatório! {Exception}')
-            
-            r_id = random.randint(0, 1000)
-            config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
-            messege = f"""Número de relatórios com falhas: {len(list_failed)}
-            
-            Erro interno no método que checa o status relatório!
-            
-            {date.today()}
-            
-            ... rpa-pipefy v1.2.1
-            """
-            
-            SendMail(config_mail, subject, messege).send_mail()
-            quit()
-
 
     def pipe_report_export(self):
         """
@@ -313,19 +284,6 @@ class PipeReportExportLink:
         try:
             response = RequestApi(URL_API, payload, headers).return_requests()
 
-            try:
-                count = 0
-                status = None# PipeReportExportLink.check_report_state()
-                while status != 'done' and count > 1:
-                    time.sleep(2.5)
-                    status = PipeReportExportLink.check_report_state(self)
-                    count += 1
-                    if count > 48:
-                        return False
-            except:
-                logger.error(f'Esse relatório ({self.report_item["file_name"]}:{self.pipe_report_id}) (PIPE:{self.report_item["pipe_name"]}) falha!\nfalhou ao checar o status do relatório!')
-                return False
-            
             if response is not False:
                 response = response.json()
                 if response['data']['pipeReportExport'] is not None:
@@ -333,30 +291,29 @@ class PipeReportExportLink:
                                                 self.token).filter_data_query(
                         response)  # return response['data']['pipeReportExport']['fileURL']
                 elif 'errors' in response:
-                    
                     logger.warning(
-                        f"Warning: Esse relatório ({self.report_item['file_name']}:{self.pipe_report_id}) (PIPE:{self.report_item['pipe_name']}) falhou!\n{response['errors'][0]['message']}")
+                        f"Warning: Esse relatório ({self.report_id}) falhou!\n{response['errors'][0]['message']}")
                     return False
                 else:
                     logger.warning(
-                        f'Warning: Esse relatório ({self.report_item["file_name"]}:{self.pipe_report_id}) (PIPE:{self.report_item["pipe_name"]}) falhou! Não foi possível obter o link do relatório!')
+                        f'Warning: Esse relatório ({self.report_id}) falhou! Não foi possível obter o link do relatório!')
                     return False
             else:
-                logger.error(f'Esse relatório ({self.report_item["file_name"]}:{self.pipe_report_id}) (PIPE:{self.report_item["pipe_name"]}) falhou!\nAlgo está errado com a requisição na API. {response}')
+                logger.error(f'Esse relatório falhou!\nAlgo está errado com a requisição na API. {response}')
                 return False
         except Exception:
             logger.critical(f'Erro interno no método que gera link do relatório! {Exception}')
             
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             Erro interno no método que gera link do relatório!
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -368,34 +325,34 @@ class SaveReportFile:
     save file report
     """
 
-    def __init__(self, link_report, save_path, backup_status, report_item):
+    def __init__(self, link_report, save_path, name_file, backup_status):
         self.link_report = link_report
         self.save_path = save_path
+        self.name_file = name_file
         self.backup_status = backup_status
-        self.report_item = report_item
-        
+
     def check_file_backup(self):
         try:
             if self.backup_status:
-                if os.path.isfile(f'{self.save_path}\\{self.report_item["file_name"]}.xlsx'):
+                if os.path.isfile(f'{self.save_path}\\{self.name_file}.xlsx'):
                     return True
                 else:
                     return False
             else:
                 return False
         except Exception:
-            logger.critical(f'erro interno no método check_file_backup:\nnão foi possível modificar o arquivo do relatório ({self.report_item["file_name"]}) \n{Exception}\n')
+            logger.critical(f'erro interno no método check_file_backup:\nnão foi possível modificar o arquivo do relatório ({self.save_path}) \n{Exception}\n')
             
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             erro interno no método check_file_backup:\nnão foi possível modificar o arquivo do relatório
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -414,14 +371,14 @@ class SaveReportFile:
             
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             não foi possível criar ou verificar o diretório
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -431,33 +388,33 @@ class SaveReportFile:
         try:
             secret = secrets.token_urlsafe(16)
             code_file = f'{secret[0:6]}'
-            if os.path.exists(f'{self.save_path}\\BACKUP-{self.report_item["file_name"]}'):
+            if os.path.exists(f'{self.save_path}\\BACKUP-{self.name_file}'):
                 # using os.rename() method
-                os.rename(f'{self.save_path}\\{self.report_item["file_name"]}.xlsx', f'{self.save_path}\\BACKUP-{self.report_item["file_name"]}\\BK-{code_file}-{self.report_item["file_name"]}.xlsx')
+                os.rename(f'{self.save_path}\\{self.name_file}.xlsx', f'{self.save_path}\\BACKUP-{self.name_file}\\BK-{code_file}-{self.name_file}.xlsx')
                 return True
             else:
-                os.makedirs(u"{}\\BACKUP-{}".format(self.save_path, self.report_item["file_name"]))
+                os.makedirs(u"{}\\BACKUP-{}".format(self.save_path, self.name_file))
                 time.sleep(1)
-                os.rename(f'{self.save_path}\\{self.report_item["file_name"]}.xlsx', f'{self.save_path}\\BACKUP-{self.report_item["file_name"]}\\BK-{code_file}-{self.report_item["file_name"]}.xlsx')
+                os.rename(f'{self.save_path}\\{self.name_file}.xlsx', f'{self.save_path}\\BACKUP-{self.name_file}\\BK-{code_file}-{self.name_file}.xlsx')
                 return True
         except Exception:
-            logger.critical(f'não foi possível fazer um backup do arquivo ({self.save_path}\\{self.report_item["file_name"]}) \n{Exception}\n')
+            logger.critical(f'não foi possível fazer um backup do arquivo ({self.save_path}\\{self.name_file}) \n{Exception}\n')
             
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             não foi possível fazer um backup do arquivo
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
             quit()
-    
+
     def download_save(self):
         """
                     verifica se a pasta existe
@@ -465,44 +422,68 @@ class SaveReportFile:
         """
         try:
             if self.check_folder():  # verifica se a pasta existe!
-                path_file = f'{self.save_path}\\{self.report_item["file_name"]}.xlsx'
+                path_file = f'{self.save_path}\\{self.name_file}.xlsx'
                 if self.check_file_backup():
                     if self.backup_file():
                         with open(path_file, "wb") as f:
-                            response = requests.get(self.link_report)
-                            size = len(response.content)
-                            if size > 1000:
-                                open(path_file, "wb").write(response.content)
+                            response = requests.get(self.link_report, stream=True)
+                            total_length = response.headers.get('content-length')
+
+                            if total_length is None:  # no content length header
+                                f.write(response.content)
                             else:
-                                logger.warning(f"o download desse relatório ({self.report_item['file_name']}:{self.report_item['report_id']}) (PIPE:{self.report_item['pipe_name']}) falhou!")
-                                return False
+                                dl = 0
+                                total_length = int(total_length)
+                                for data in response.iter_content(chunk_size=total_length):
+                                    dl += len(data)
+                                    f.write(data)
+                                    done = int(24 * dl / total_length)
+                                    sys.stdout.write(
+                                        "\r\033[0;32m[%s%s\033[0;32m]" % ('\033[1;31m=' * done, ' ' * (24 - done)))
+                                    sys.stdout.flush()
+                                sys.stdout.write(' Download --> 100%')
+                                sys.stdout.write(RESET)
                         print(
-                            f'\n\033[1;36m relatório ({self.report_item["file_name"]}) 💾 salvo em --> {self.save_path}\\{self.report_item["file_name"]}.xlsx')
+                            f'\n\033[1;36m relatório ({self.name_file}) 💾 salvo em --> {self.save_path}\\{self.name_file}.xlsx')
                         sys.stdout.write(RESET)
                         return True
                     else:
-                        logger.critical(f'não foi possível fazer um backup do arquivo ({self.save_path}\\{self.report_item["file_name"]}) \n{Exception}\n')
+                        logger.critical(f'não foi possível fazer um backup do arquivo ({self.save_path}\\{self.name_file}) \n{Exception}\n')
                         
                         r_id = random.randint(0, 1000)
                         config_mail = config['config_alert_mail']
-                        subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+                        subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
                         messege = f"""Número de relatórios com falhas: {len(list_failed)}
                         
                         não foi possível fazer um backup do arquivo
                         
-                        {date.today()}
+                        {datetime.date.today()}
                         
-                        ... rpa-pipefy v1.2.1
+                        ... rpa-pipefy v1.0 
                         """
                         
                         SendMail(config_mail, subject, messege).send_mail()
                         quit()
                 else:
                     with open(path_file, "wb") as f:
-                        response = requests.get(self.link_report)
-                        open(path_file, "wb").write(response.content)
+                        response = requests.get(self.link_report, stream=True)
+                        total_length = response.headers.get('content-length')
+
+                        if total_length is None:  # no content length header
+                            f.write(response.content)
+                        else:
+                            dl = 0
+                            total_length = int(total_length)
+                            for data in response.iter_content(chunk_size=total_length):
+                                dl += len(data)
+                                f.write(data)
+                                done = int(24 * dl / total_length)
+                                sys.stdout.write("\r\033[0;32m[%s%s\033[0;32m]" % ('\033[1;31m=' * done, ' ' * (24 - done)))
+                                sys.stdout.flush()
+                            sys.stdout.write(' Download --> 100%')
+                            sys.stdout.write(RESET)
                     print(
-                        f'\n\033[1;36m relatório ({self.report_item["file_name"]}) 💾 salvo em --> {self.save_path}\\{self.report_item["file_name"]}.xlsx')
+                        f'\n\033[1;36m relatório ({self.name_file}) 💾 salvo em --> {self.save_path}\\{self.name_file}.xlsx')
                     sys.stdout.write(RESET)
                     return True
             else:
@@ -512,14 +493,14 @@ class SaveReportFile:
             
             r_id = random.randint(0, 1000)
             config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
+            subject = f'🚨 ERRO CRITICO 🚨 - {datetime.date.today()} ID:{r_id} '
             messege = f"""Número de relatórios com falhas: {len(list_failed)}
             
             erro interno no método download_save!
             
-            {date.today()}
+            {datetime.date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.0 
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -541,42 +522,33 @@ def clear():
 def worker_report(report_item):
     print('\n')
     requesting_new_report = ExportPipeReportId(report_item['pipe_id'], report_item['report_id'],
-                                               token_api, report_item).export_pipe_report()  # pode retornar int ou bool
+                                               token_api).export_pipe_report()  # pode retornar int ou bool
 
     if type(requesting_new_report) != bool:  # requesting_report retorna False se ocorreu algum erro.
         link_name_report = PipeReportExportLink(int(requesting_new_report), report_item['pipe_id'],
                                                 report_item['report_id'],
                                                 token_api).pipe_report_export()
-        
-        print(f"📊 gerado relatório: ({report_item['file_name']})\n")
 
-        with alive_bar(100) as bar:   # default setting
-                for i in range(100):
-                    time.sleep(0.15)
-                    bar() 
         if type(link_name_report) != bool and link_name_report is not None:
-            print(f"\n📊 relatório ({report_item['file_name']}) gerado com sucesso!")
+            print(f"📊 relatório ({link_name_report[1]}) gerado com sucesso!")
             time.sleep(0.2)
-            print(f"🤖 baixando relatório --> ({report_item['file_name']})\n")
-            with alive_bar(100) as bar:   # default setting
-                for i in range(100):
-                    time.sleep(0.04)
-                    bar()
+            print(f"🤖 baixando relatório --> ({link_name_report[1]})")
+
             # baixando e salvando file !!!!!!
-            if SaveReportFile(link_name_report[0], report_item['save_path'], report_item['backup_file'], report_item).download_save():
+            if SaveReportFile(link_name_report[0], report_item['save_path'], link_name_report[1], report_item['backup_file']).download_save():
                 list_done.append(item)
             else:
-                logger.warning(f"o download desse relatório ({report_item['file_name']}:{report_item['report_id']}) (PIPE:{report_item['pipe_name']}) falhou!")
+                logger.warning(f"o download desse relatório ({report_item['report_id']}) falhou!")
 
         else:
-            print(f"link para download desse relatório ({report_item['file_name']}:{report_item['report_id']}) (PIPE:{report_item['pipe_name']}) falhou!")
+            print(f"link para download desse relatório ({report_item['report_id']}) falhou!")
     else:
         list_failed.append(item)
     time.sleep(0.8)
 
 
 if __name__ == '__main__':
-    logger.info(f'\n\n--------------------- start {datetime.now()} ---------------------')
+    logger.info(f'\n\n--------------------- start {datetime.datetime.now()} ---------------------')
     """
     permissões...
     https://help.pipefy.com/pt-BR/articles/6027079-funcoes-e-permissoes-da-empresa
@@ -614,32 +586,30 @@ if __name__ == '__main__':
             time.sleep(2.4)
     print(f'\n\nnúmero de relatórios que falharam!:--> {len(list_failed)}')
 
+    list_failed_freeze = list_failed
+    list_failed = []
+    # tentando novamente os relatórios que falharam...
+    if len(list_failed_freeze) >= 1:
+        print('tentando novamente...')
+        for item_failed in list_failed_freeze:
+            worker_report(item_failed)
+            time.sleep(2.6)
     print(
         f'\n\n\n🚀 \033[0;35mrpa finalizado com sucesso!\n\n📊 \033[0;32mrelatórios salvos com sucesso: {len(list_done)}\033[0;0m\n⛔ \033[1;31mrelatórios com falhas: {len(list_failed)}\033[0;0m\n\n')
     try:
-        list_repor_txt = []
-        for x in list_failed:
-            list_repor_txt.append(f"\n        PIPE: {x['pipe_name']}\n        RELATÓRIO: {x['file_name']}\n\n        ")
-        
-        txt ="".join([str(item) for item in list_repor_txt])
-        
         r_id = random.randint(0, 1000)
         config_mail = config['config_alert_mail']
-        subject = f'🚨 RELATÓRIO COM FALHA 🚨 - {datetime.now().strftime("%b %d %Y %H:%M:%S")} '
-        messege = f"""
+        subject = f'🚨 RELATÓRIO COM FALHA 🚨 - {datetime.date.today()} ID:{r_id} '
+        messege = f"""Número de relatórios com falhas: {len(list_failed)}
         
-        Número de relatórios com falhas: {len(list_failed)}
+        mais informação em anexo (report.log)
         
-        RELATÓRIOS:
-        {txt}
+        {datetime.date.today()}
         
-        
-        mais informação em anexo (report.log)   data:{datetime.now().strftime("%b %d %Y %H:%M:%S")}
-        rpa-pipefy v1.2.1
+        ... rpa-pipefy v1.0 
         """
-
-        if len(list_failed) >= 1:
-            SendMail(config_mail, subject, messege).send_mail()
+        
+        SendMail(config_mail, subject, messege).send_mail()
         
     except Exception:
         logger.critical('')

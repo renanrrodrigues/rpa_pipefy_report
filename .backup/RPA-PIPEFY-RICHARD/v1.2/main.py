@@ -206,7 +206,7 @@ class ExportPipeReportId:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -248,53 +248,11 @@ class PipeReportExportLink:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
             quit()
-    
-    
-    def check_report_state(self):
-        """
-        check state report.
-        """
-        payload = {
-            "query": "{\n  pipeReportExport(id: "f'{int(self.id_pipe_report_export)}'") {\n    fileURL\n    state\n    startedAt\n    requestedBy {\n      id\n    }\n  }\n  pipe(id:"f'{int(self.pipe_id)}'"){\n   reports{\n    id\n    name\n  }\n  }\n}",
-            "variables": None
-        }
-
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "authorization": "Bearer "f'{self.token}'""
-        }
-        
-        try:
-            response = RequestApi(URL_API, payload, headers).return_requests()
-            response = response.json()
-            
-            status = response['data']['pipeReportExport']['state']
-            return status
-            
-        except Exception:
-            logger.critical(f'Erro interno no método que checa o status relatório! {Exception}')
-            
-            r_id = random.randint(0, 1000)
-            config_mail = config['config_alert_mail']
-            subject = f'🚨 ERRO CRITICO 🚨 - {date.today()} ID:{r_id} '
-            messege = f"""Número de relatórios com falhas: {len(list_failed)}
-            
-            Erro interno no método que checa o status relatório!
-            
-            {date.today()}
-            
-            ... rpa-pipefy v1.2.1
-            """
-            
-            SendMail(config_mail, subject, messege).send_mail()
-            quit()
-
 
     def pipe_report_export(self):
         """
@@ -313,19 +271,6 @@ class PipeReportExportLink:
         try:
             response = RequestApi(URL_API, payload, headers).return_requests()
 
-            try:
-                count = 0
-                status = None# PipeReportExportLink.check_report_state()
-                while status != 'done' and count > 1:
-                    time.sleep(2.5)
-                    status = PipeReportExportLink.check_report_state(self)
-                    count += 1
-                    if count > 48:
-                        return False
-            except:
-                logger.error(f'Esse relatório ({self.report_item["file_name"]}:{self.pipe_report_id}) (PIPE:{self.report_item["pipe_name"]}) falha!\nfalhou ao checar o status do relatório!')
-                return False
-            
             if response is not False:
                 response = response.json()
                 if response['data']['pipeReportExport'] is not None:
@@ -356,7 +301,7 @@ class PipeReportExportLink:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -395,7 +340,7 @@ class SaveReportFile:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -421,7 +366,7 @@ class SaveReportFile:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -452,7 +397,7 @@ class SaveReportFile:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -470,12 +415,7 @@ class SaveReportFile:
                     if self.backup_file():
                         with open(path_file, "wb") as f:
                             response = requests.get(self.link_report)
-                            size = len(response.content)
-                            if size > 1000:
-                                open(path_file, "wb").write(response.content)
-                            else:
-                                logger.warning(f"o download desse relatório ({self.report_item['file_name']}:{self.report_item['report_id']}) (PIPE:{self.report_item['pipe_name']}) falhou!")
-                                return False
+                            open(path_file, "wb").write(response.content)
                         print(
                             f'\n\033[1;36m relatório ({self.report_item["file_name"]}) 💾 salvo em --> {self.save_path}\\{self.report_item["file_name"]}.xlsx')
                         sys.stdout.write(RESET)
@@ -492,7 +432,7 @@ class SaveReportFile:
                         
                         {date.today()}
                         
-                        ... rpa-pipefy v1.2.1
+                        ... rpa-pipefy v1.2
                         """
                         
                         SendMail(config_mail, subject, messege).send_mail()
@@ -519,7 +459,7 @@ class SaveReportFile:
             
             {date.today()}
             
-            ... rpa-pipefy v1.2.1
+            ... rpa-pipefy v1.2
             """
             
             SendMail(config_mail, subject, messege).send_mail()
@@ -635,7 +575,7 @@ if __name__ == '__main__':
         
         
         mais informação em anexo (report.log)   data:{datetime.now().strftime("%b %d %Y %H:%M:%S")}
-        rpa-pipefy v1.2.1
+        rpa-pipefy v1.2
         """
 
         if len(list_failed) >= 1:

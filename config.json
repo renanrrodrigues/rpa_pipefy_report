@@ -1,21 +1,32 @@
 {
     "config_name": "config name",
     "token": "",
+    
+    
+    "config_alert_mail":{
+        "active": true,
+        "email_address": "",
+        "email_password": "",
+        "to": ""
+    },
 
     "reports": [
-        {
+        {   
+            "pipe_name": "Avaliação de Desempenho",
             "active": true,
-            "pipe_id": 0,
-            "report_id": 0,
+            "pipe_id": 302841213,
+            "report_id": 300382453,
             "backup_file": true,
-            "save_path": "C:\\FOLDER\\REPORT\\2022"},
-
+            "file_name": "RELATÓRIO AVALIAÇÃO 2022",
+            "save_path": "C:\\RPA-PIPE\\REPORT\\AVALIAÇÃO"},
         {
+            "pipe_name": "Gerenciamento de Produto",
             "active": false,
-            "pipe_id": 0,
-            "report_id": 0,
+            "pipe_id": 302841214,
+            "report_id": 300382454,
             "backup_file": true,
-            "save_path": "C:\\FOLDER\\REPORT\\2022"}
+            "file_name": "RELATÓRIO PRODUTO 2020",
+            "save_path": "C:\\RPA-PIPE\\REPORT\\PRODUTO"}
+        
     ]
 }
-
